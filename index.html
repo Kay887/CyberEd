@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberEd Tracker — ESecurityIn Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg:#080A0E; --bg2:#0D1018; --bg3:#121620; --bg4:#171D28;
+  --border:#1C2232; --border2:#232C3D;
+  --text:#E8EDF5; --text2:#7A8799; --text3:#3D4D60;
+  --green:#00D4A0; --blue:#4A90E2; --amber:#F5A623; --purple:#9B59B6; --red:#E05C5C; --cyan:#00BCD4;
+  --p1:#00D4A0; --p2:#4A90E2; --p3:#9B59B6; --p4:#F5A623; --p5:#E05C5C;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.6;min-height:100vh}
+
+/* HDR */
+.hdr{padding:36px 52px 32px;border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+.hdr::before{content:'';position:absolute;top:-60px;right:-60px;width:380px;height:380px;background:radial-gradient(circle,rgba(0,212,160,0.06) 0%,transparent 68%);pointer-events:none}
+.hdr-tag{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.hdr-tag::before{content:'';display:block;width:18px;height:1px;background:var(--green)}
+h1{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;letter-spacing:-.025em;line-height:1.05;margin-bottom:4px}
+h1 span{color:var(--green)}
+.hdr-sub{color:var(--text2);font-size:13px;margin-bottom:8px}
+.hdr-sub2{color:var(--text3);font-size:11px;margin-bottom:24px;font-family:'DM Mono',monospace}
+.master-stats{display:flex;gap:0;border:1px solid var(--border2);border-radius:10px;overflow:hidden;width:fit-content;flex-wrap:wrap}
+.mstat{padding:12px 20px;border-right:1px solid var(--border2);text-align:center;min-width:88px}
+.mstat:last-child{border-right:none}
+.mstat-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--green);display:block;line-height:1;margin-bottom:2px}
+.mstat-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
+.mstat-val.deadline{color:var(--amber)}
+
+/* DEADLINE BANNER */
+.deadline-banner{display:flex;align-items:center;gap:12px;padding:10px 52px;background:rgba(245,166,35,0.06);border-bottom:1px solid rgba(245,166,35,0.2)}
+.db-icon{font-size:14px}
+.db-text{font-family:'DM Mono',monospace;font-size:11px;color:var(--amber)}
+.db-text strong{color:var(--text)}
+.db-days{margin-left:auto;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:var(--amber)}
+
+/* PROGRESS BARS */
+.mpb-wrap{padding:18px 52px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.mpb-row{display:flex;align-items:center;gap:16px;margin-bottom:7px}
+.mpb-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);white-space:nowrap;width:210px}
+.mpb-track{flex:1;height:5px;background:var(--border);border-radius:99px;overflow:hidden}
+.mpb-fill{height:100%;border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+.mpb-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--text2);width:40px;text-align:right}
+
+/* NAV */
+.nav{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 52px;background:var(--bg2);overflow-x:auto}
+.nav-tab{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:14px 18px;cursor:pointer;color:var(--text3);border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.nav-tab:hover{color:var(--text2)}
+.nav-tab.active{color:var(--green);border-bottom-color:var(--green)}
+
+/* MAIN */
+.main{padding:32px 52px 60px}
+.view{display:none}
+.view.active{display:block}
+
+/* LEGEND */
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;align-items:center}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.leg-ppt{background:var(--blue)}.leg-gloss{background:var(--purple)}.leg-pre{background:var(--green)}.leg-quiz{background:var(--amber)}
+.leg-hint{margin-left:auto;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)}
+
+/* PHASE SECTION */
+.phase-section{margin-bottom:40px}
+.phase-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.phase-hdr-left{display:flex;align-items:center;gap:10px}
+.phase-badge{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:5px}
+.pb1{background:rgba(0,212,160,0.12);color:var(--p1)}.pb2{background:rgba(74,144,226,0.12);color:var(--p2)}
+.pb3{background:rgba(155,89,182,0.12);color:var(--p3)}.pb4{background:rgba(245,166,35,0.12);color:var(--p4)}
+.pb5{background:rgba(224,92,92,0.12);color:var(--p5)}
+.phase-title-txt{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--text)}
+.phase-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);text-align:right;line-height:1.6}
+.phase-pb{height:3px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:14px}
+.phase-pb-fill{height:100%;border-radius:99px;transition:width .5s ease}
+
+/* COMP CARDS */
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.comp-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .2s}
+.comp-card:hover{border-color:var(--border2)}
+.comp-card.done{border-color:rgba(0,212,160,0.28)}
+.comp-head{display:flex;align-items:center;gap:8px;padding:12px 14px 10px;border-bottom:1px solid var(--border);user-select:none;flex-wrap:wrap}
+.comp-num{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:20px;flex-shrink:0}
+.comp-name-txt{font-family:'Syne',sans-serif;font-size:12.5px;font-weight:600;color:var(--text);flex:1;min-width:120px}
+.comp-certs{font-family:'DM Mono',monospace;font-size:8.5px;color:var(--text3);white-space:nowrap;width:100%;padding-left:28px;margin-top:-4px}
+.comp-pct-badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid var(--border2);color:var(--text3);transition:all .3s;white-space:nowrap}
+.comp-pct-badge.full{background:rgba(0,212,160,0.12);border-color:rgba(0,212,160,0.3);color:var(--green)}
+.comp-body{padding:10px 14px 12px}
+
+.mod-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.module-row{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)}
+.module-row:last-child{border-bottom:none}
+.mod-name-wrap{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0}
+.mod-name{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arch-checks{display:flex;gap:3px;flex-shrink:0}
+.ach{width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text3);transition:all .15s;font-family:'DM Mono',monospace;position:relative;flex-shrink:0}
+.ach:hover{border-color:var(--text3)}
+.ach.checked{border-color:transparent}
+.ach[data-type="ppt"].checked{background:rgba(74,144,226,0.25);color:var(--blue)}
+.ach[data-type="gloss"].checked{background:rgba(155,89,182,0.25);color:var(--purple)}
+.ach[data-type="pre"].checked{background:rgba(0,212,160,0.25);color:var(--green)}
+.ach[data-type="quiz"].checked{background:rgba(245,166,35,0.25);color:var(--amber)}
+.ach-tip{display:none;position:absolute;bottom:110%;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);border-radius:4px;padding:3px 8px;font-size:9px;white-space:nowrap;color:var(--text2);z-index:100;pointer-events:none}
+.ach:hover .ach-tip{display:block}
+.comp-bar-row{display:flex;gap:2px;margin-top:8px}
+.comp-bar-seg{height:3px;border-radius:99px;flex:1;background:var(--border);transition:background .3s}
+.fill-ppt{background:var(--blue)}.fill-gloss{background:var(--purple)}.fill-pre{background:var(--green)}.fill-quiz{background:var(--amber)}
+
+/* CONCEPTS VIEW */
+.concept-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.concept-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+.concept-num{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);width:22px;flex-shrink:0}
+.concept-title{font-family:'Syne',sans-serif;font-size:13.5px;font-weight:700;flex:1}
+.concept-certs{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);white-space:nowrap}
+.concept-arrow{font-size:10px;color:var(--text3);transition:transform .2s}
+.concept-card.open .concept-arrow{transform:rotate(180deg)}
+.concept-body{display:none;padding:14px 16px 16px}
+.concept-card.open .concept-body{display:block}
+.concept-section-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin:12px 0 8px}
+.concept-section-label:first-child{margin-top:0}
+.kc-pills{display:flex;flex-wrap:wrap;gap:6px}
+.kc-pill{font-size:10.5px;padding:4px 10px;border-radius:99px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}
+.tool-pills{display:flex;flex-wrap:wrap;gap:6px}
+.tool-pill{font-family:'DM Mono',monospace;font-size:10px;padding:4px 10px;border-radius:6px;background:rgba(74,144,226,0.08);border:1px solid rgba(74,144,226,0.2);color:var(--blue)}
+.wow-box{padding:10px 12px;background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.2);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.55}
+.wow-box strong{color:var(--amber);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:5px}
+.lo-list{padding-left:0;list-style:none}
+.lo-list li{font-size:11px;color:var(--text2);padding:4px 0 4px 16px;position:relative;line-height:1.5}
+.lo-list li::before{content:'→';position:absolute;left:0;color:var(--green)}
+
+/* PPT VIEW */
+.ppt-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.ppt-comp-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.ppt-comp-head{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--bg3);border-bottom:1px solid var(--border)}
+.ppt-comp-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text)}
+.ppt-total-badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(74,144,226,0.12);color:var(--blue);border:1px solid rgba(74,144,226,0.25)}
+.ppt-module-list{padding:6px 0}
+.ppt-mod-row{display:flex;align-items:center;padding:7px 14px;border-bottom:1px solid var(--border)}
+.ppt-mod-row:last-child{border-bottom:none}
+.ppt-mod-name{font-size:11px;color:var(--text2);flex:1}
+.ppt-check-box{width:18px;height:18px;border-radius:3px;border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;transition:all .2s;flex-shrink:0}
+.ppt-check-box.done{background:rgba(74,144,226,0.2);border-color:var(--blue);color:var(--blue)}
+
+/* LAB PROGRAMME VIEW */
+.lab-prog-intro{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px}
+.lab-chain-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 12px}
+.lcc-range{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.lcc-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:5px}
+.lcc-desc{font-size:10.5px;color:var(--text2);line-height:1.5}
+
+.lab-entry{background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;transition:border-color .2s}
+.lab-entry:hover{border-color:var(--border2)}
+.lab-entry.capstone{border-color:rgba(0,212,160,0.3);background:rgba(0,212,160,0.03)}
+.lab-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;flex-wrap:wrap}
+.lab-num-pill{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;padding:3px 9px;border-radius:4px;flex-shrink:0;letter-spacing:.04em}
+.lab-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text);flex:1;min-width:140px}
+.lab-comp-tag{font-family:'DM Mono',monospace;font-size:9px;padding:2px 7px;border-radius:3px;background:var(--bg4);border:1px solid var(--border2);color:var(--text3);flex-shrink:0}
+.lab-task-counter{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);margin-right:6px;white-space:nowrap}
+.lab-check-main{width:20px;height:20px;border-radius:4px;border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;transition:all .2s;flex-shrink:0}
+.lab-check-main.done{background:rgba(0,212,160,0.2);border-color:var(--green);color:var(--green)}
+.lab-expand-btn{font-family:'DM Mono',monospace;font-size:9px;color:var(--text3);cursor:pointer;padding:0 6px;transition:color .15s}
+.lab-expand-btn:hover{color:var(--text2)}
+.lab-body{display:none;padding:0 14px 12px;border-top:1px solid var(--border)}
+.lab-entry.open .lab-body{display:block}
+.lab-tasks-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:10px 0 6px}
+.lab-task{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.lab-task:last-child{border-bottom:none}
+.lab-task-check{width:14px;height:14px;border-radius:3px;border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:8px;color:transparent;transition:all .2s;flex-shrink:0;margin-top:2px}
+.lab-task-check.done{background:rgba(0,212,160,0.18);border-color:var(--green);color:var(--green)}
+.lab-task-body{flex:1}
+.lab-task-name{font-size:11.5px;font-weight:500;color:var(--text)}
+.gate-notice{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid rgba(245,166,35,0.25);background:rgba(245,166,35,0.05);border-radius:8px;margin-top:12px;margin-bottom:24px;font-size:11px;color:var(--amber);font-family:'DM Mono',monospace}
+
+/* SUMMARY VIEW */
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.sum-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.sum-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;display:block;margin-bottom:3px}
+.sum-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
+.archetype-summary{margin-bottom:24px}
+.arch-sum-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.arch-sum-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.arch-sum-name{font-size:11px;color:var(--text2);width:190px;flex-shrink:0}
+.arch-sum-track{flex:1;height:7px;background:var(--border);border-radius:99px;overflow:hidden}
+.arch-sum-fill{height:100%;border-radius:99px;transition:width .5s ease}
+.arch-sum-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--text2);width:64px;text-align:right}
+.phase-completion-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.sc-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px}
+.sc-sprint-name{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+.sc-pct{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:5px}
+.sc-bar{height:4px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:6px}
+.sc-bar-fill{height:100%;border-radius:99px;transition:width .5s ease}
+.sc-comps{font-size:10px;color:var(--text3)}
+.sec-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+
+@media(max-width:900px){
+  .hdr,.mpb-wrap,.nav,.main,.deadline-banner{padding-left:16px;padding-right:16px}
+  .comp-grid,.ppt-grid,.phase-completion-grid,.summary-grid,.lab-prog-intro{grid-template-columns:1fr}
+}
+
+/* ─── SYNC STATUS ─── */
+.sync-bar{display:flex;align-items:center;gap:8px;padding:6px 52px;background:var(--bg2);border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.06em}
+.sync-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .4s}
+.sync-dot.connecting { background:var(--amber); animation:pulse 1.2s infinite; }
+.sync-dot.live       { background:var(--green); }
+.sync-dot.error      { background:var(--red); }
+.sync-dot.saving     { background:var(--blue); animation:pulse .6s infinite; }
+.sync-label { color:var(--text3); }
+.sync-time  { color:var(--text3); margin-left:auto; }
+@keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.35} }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-tag">Live Content-Build Tracker · ESecurityIn Academy</div>
+  <h1>CyberEd <span>Tracker</span></h1>
+  <p class="hdr-sub">15 Competencies · 60 Classes · 240 Deliverable Units · 15 Chained Labs (60 Activities) · Capstone</p>
+  <p class="hdr-sub2">Learner-facing programme: 12 months · 9.75 hrs/week · 390 total hours — this tracker follows the production/build schedule, target Jul 10, 2026</p>
+  <div class="master-stats">
+    <div class="mstat"><span class="mstat-val" id="stat-units">0</span><span class="mstat-lbl">Units Done</span></div>
+    <div class="mstat"><span class="mstat-val" id="stat-pct">0%</span><span class="mstat-lbl">Overall</span></div>
+    <div class="mstat"><span class="mstat-val" id="stat-labs">0</span><span class="mstat-lbl">Labs Done</span></div>
+    <div class="mstat"><span class="mstat-val" id="stat-ppts">0</span><span class="mstat-lbl">PPTs Done</span></div>
+    <div class="mstat"><span class="mstat-val deadline">Jul 10</span><span class="mstat-lbl">Build Target</span></div>
+  </div>
+</div>
+
+<!-- DEADLINE BANNER -->
+<div class="deadline-banner">
+  <span class="db-icon">⏱</span>
+  <span class="db-text">Content-build target: <strong>July 10, 2026</strong> — all 240 class deliverables + 60 lab activities authored and QA'd</span>
+  <span class="db-days" id="days-remaining">— days left</span>
+</div>
+
+<!-- PROGRESS BARS -->
+<div class="mpb-wrap">
+  <div class="mpb-row"><span class="mpb-label">Overall Progress</span><div class="mpb-track"><div class="mpb-fill" id="bar-overall" style="width:0%;background:var(--green)"></div></div><span class="mpb-pct" id="pct-overall">0%</span></div>
+  <div class="mpb-row"><span class="mpb-label">📊 PPT Decks (60)</span><div class="mpb-track"><div class="mpb-fill" id="bar-ppt" style="width:0%;background:var(--blue)"></div></div><span class="mpb-pct" id="pct-ppt">0%</span></div>
+  <div class="mpb-row"><span class="mpb-label">📚 Glossaries (60)</span><div class="mpb-track"><div class="mpb-fill" id="bar-gloss" style="width:0%;background:var(--purple)"></div></div><span class="mpb-pct" id="pct-gloss">0%</span></div>
+  <div class="mpb-row"><span class="mpb-label">📖 Pre-reads (60)</span><div class="mpb-track"><div class="mpb-fill" id="bar-pre" style="width:0%;background:var(--green)"></div></div><span class="mpb-pct" id="pct-pre">0%</span></div>
+  <div class="mpb-row"><span class="mpb-label">✏️ Quizzes pre+post (60)</span><div class="mpb-track"><div class="mpb-fill" id="bar-quiz" style="width:0%;background:var(--amber)"></div></div><span class="mpb-pct" id="pct-quiz">0%</span></div>
+  <div class="mpb-row"><span class="mpb-label">🧪 Lab Activities (60)</span><div class="mpb-track"><div class="mpb-fill" id="bar-lab" style="width:0%;background:var(--red)"></div></div><span class="mpb-pct" id="pct-lab">0%</span></div>
+</div>
+
+<!-- SYNC STATUS BAR -->
+<div class="sync-bar">
+  <div class="sync-dot connecting" id="sync-dot"></div>
+  <span class="sync-label" id="sync-label">Connecting to Supabase…</span>
+  <span class="sync-time" id="sync-time"></span>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-tab active" data-view="competencies">Competencies</div>
+  <div class="nav-tab" data-view="concepts">Curriculum Detail</div>
+  <div class="nav-tab" data-view="ppt">PPT Breakdown</div>
+  <div class="nav-tab" data-view="labs">Lab Programme (15)</div>
+  <div class="nav-tab" data-view="summary">Summary</div>
+</div>
+
+<div class="main">
+
+<!-- ══ COMPETENCIES (build checklist) ══ -->
+<div class="view active" id="view-competencies">
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot leg-ppt"></div>PPT + Speaker Notes</div>
+    <div class="leg-item"><div class="leg-dot leg-gloss"></div>Glossary</div>
+    <div class="leg-item"><div class="leg-dot leg-pre"></div>Pre-read Brief</div>
+    <div class="leg-item"><div class="leg-dot leg-quiz"></div>Quiz (pre+post)</div>
+    <span class="leg-hint">Click archetype cells to mark done · Lab activities tracked separately under "Lab Programme"</span>
+  </div>
+  <div id="phase-sections"></div>
+</div>
+
+<!-- ══ CURRICULUM DETAIL (brochure content: key concepts, tools, wow factor, LOs) ══ -->
+<div class="view" id="view-concepts">
+  <div class="legend">
+    <span class="leg-hint" style="margin-left:0">Reference content pulled directly from the programme brochure — click a competency to expand key concepts, tools, learning outcomes &amp; the "wow factor" moment.</span>
+  </div>
+  <div id="concepts-list"></div>
+</div>
+
+<!-- ══ PPT BREAKDOWN ══ -->
+<div class="view" id="view-ppt">
+  <div class="ppt-grid" id="ppt-grid"></div>
+</div>
+
+<!-- ══ LAB PROGRAMME ══ -->
+<div class="view" id="view-labs">
+  <div class="lab-prog-intro" id="lab-intro-cards"></div>
+  <div class="sec-label">15 CHAINED LABS — 4 NESTED ACTIVITIES EACH (60 TOTAL) — CLICK ANY LAB TO EXPAND</div>
+  <div id="lab-list"></div>
+</div>
+
+<!-- ══ SUMMARY ══ -->
+<div class="view" id="view-summary">
+  <div class="summary-grid">
+    <div class="sum-card"><span class="sum-val" id="su-total" style="color:var(--green)">0</span><span class="sum-lbl">Units Completed</span></div>
+    <div class="sum-card"><span class="sum-val" id="su-ppt"   style="color:var(--blue)">0</span><span class="sum-lbl">PPT Decks</span></div>
+    <div class="sum-card"><span class="sum-val" id="su-gloss" style="color:var(--purple)">0</span><span class="sum-lbl">Glossaries</span></div>
+    <div class="sum-card"><span class="sum-val" id="su-quiz"  style="color:var(--amber)">0</span><span class="sum-lbl">Quizzes</span></div>
+  </div>
+  <div class="archetype-summary">
+    <div class="arch-sum-label">Archetype completion — 60 each (classes) · Labs — 60 activities</div>
+    <div class="arch-sum-row"><span class="arch-sum-name">📊 PPT Decks</span><div class="arch-sum-track"><div class="arch-sum-fill" id="as-ppt" style="background:var(--blue);width:0%"></div></div><span class="arch-sum-count" id="asc-ppt">0 / 60</span></div>
+    <div class="arch-sum-row"><span class="arch-sum-name">📚 Glossaries</span><div class="arch-sum-track"><div class="arch-sum-fill" id="as-gloss" style="background:var(--purple);width:0%"></div></div><span class="arch-sum-count" id="asc-gloss">0 / 60</span></div>
+    <div class="arch-sum-row"><span class="arch-sum-name">📖 Pre-reads</span><div class="arch-sum-track"><div class="arch-sum-fill" id="as-pre" style="background:var(--green);width:0%"></div></div><span class="arch-sum-count" id="asc-pre">0 / 60</span></div>
+    <div class="arch-sum-row"><span class="arch-sum-name">✏️ Quizzes (pre+post)</span><div class="arch-sum-track"><div class="arch-sum-fill" id="as-quiz" style="background:var(--amber);width:0%"></div></div><span class="arch-sum-count" id="asc-quiz">0 / 60</span></div>
+    <div class="arch-sum-row"><span class="arch-sum-name">🧪 Lab Activities</span><div class="arch-sum-track"><div class="arch-sum-fill" id="as-lab" style="background:var(--red);width:0%"></div></div><span class="arch-sum-count" id="asc-lab">0 / 60</span></div>
+  </div>
+  <div class="sec-label">Phase completion</div>
+  <div class="phase-completion-grid" id="phase-summary-grid"></div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DATA — sourced directly from ESecurityIn_Brochure_Final-2.pdf
+// ═══════════════════════════════════════════════════════════
+const ARCHETYPES = [
+  {key:'ppt',  label:'PPT', tip:'Class PPT + Speaker Notes'},
+  {key:'gloss',label:'GLO', tip:'Glossary Document'},
+  {key:'pre',  label:'PRE', tip:'Interactive Pre-read Brief'},
+  {key:'quiz', label:'QUZ', tip:'Pre + Post Quiz Pack'}
+];
+
+const PHASES_META = [
+  {num:1, label:'Phase 1', title:'Core Foundations',            months:'Months 1–2.5',  col:'var(--p1)', comps:[1,2,3,4,5]},
+  {num:2, label:'Phase 2', title:'Offensive Core',              months:'Months 3–5',    col:'var(--p2)', comps:[6,7,8,9]},
+  {num:3, label:'Phase 3', title:'Network, Cloud & Wireless',   months:'Months 6–7.5',  col:'var(--p3)', comps:[10,11]},
+  {num:4, label:'Phase 4', title:'Defensive Operations',        months:'Months 8–10.5', col:'var(--p4)', comps:[12,13,14]},
+  {num:5, label:'Phase 5', title:'Capstone',                    months:'Months 11–12',  col:'var(--p5)', comps:[15]},
+];
+
+// 15 competencies × 4 classes each = 60 classes. Class names for C01 are
+// remapped onto the 4 pre-existing decks (1a/M2/M3/M4) per brochure class titles.
+const COMPETENCIES = [
+  {id:1, phase:1, name:'Cybersecurity Foundations', certs:'Security+ · CEH',
+   tools:['MITRE ATT&CK Navigator','NIST CSF','ATT&CK Workbench'],
+   concepts:['CIA Triad','Risk vs Threat vs Vulnerability','Security Controls','Attack Kill Chain','MITRE ATT&CK','GRC Orientation'],
+   wow:"Rare among Indian programmes: 'mindset before toolset' as a structured, examinable module — learners leave Class 1 able to read a breach news article through an attacker's eyes, not just a spectator's.",
+   los:["Define CIA triad and map it to real-world breach scenarios with evidence","Distinguish risk, threat, and vulnerability using worked case studies","Classify security controls across three dimensions (technical / admin / physical)","Map common attack categories to the Cyber Kill Chain and MITRE ATT&CK framework","Explain why \"assume breach\" thinking has displaced perimeter-only security","Build a one-page threat profile for a fictional organisation using CIA triad and MITRE ATT&CK"],
+   modules:[
+    {id:'c1-1', name:'Security Fundamentals & Mindset', deck:'1a_Cybersecurity101'},
+    {id:'c1-2', name:'Modern Threat Landscape', deck:'M2_CIA_Triad_Security_Principles'},
+    {id:'c1-3', name:'Orientation to GRC & Career Pathways', deck:'M3_Cryptography_Fundamentals'},
+    {id:'c1-4', name:'Assessment & Threat Profile Project', deck:'M4_Operating_Systems_File_Systems'},
+   ],
+   labActivities:['Terminology exercise; Threat identification workshop','Security control mapping lab','Hashing & encryption exercises','Disk partitioning; File system exploration']},
+
+  {id:2, phase:1, name:'Networking Fundamentals', certs:'Security+ · CEH · CCNA',
+   tools:['Wireshark','Nmap','tcpdump','GNS3'],
+   concepts:['OSI/TCP-IP Model','Protocol Vulnerabilities','DNS/DHCP/ARP','Packet Analysis','Firewall/ACL','VLANs & Segmentation'],
+   wow:"Learners witness an ARP poisoning attack unfold byte-by-byte in a live packet capture — the visceral moment no textbook or YouTube video can replicate, and the one most cited in post-programme testimonials.",
+   los:["Trace OSI / TCP-IP layer behaviour for common protocols (DNS, ARP, DHCP, HTTP/S)","Identify protocol-level weaknesses and map each to known exploitation techniques","Capture and filter live traffic to distinguish normal vs. suspicious patterns","Identify ARP poisoning and DNS spoofing events within a packet capture file","Write and test basic firewall / ACL rules on a simulated network","Run a live packet capture across a simulated ARP poisoning event, byte-by-byte"],
+   modules:[
+    {id:'c2-1', name:'OSI Model & Protocol Deep Dive'},
+    {id:'c2-2', name:'Packet Analysis with Wireshark'},
+    {id:'c2-3', name:'Firewall Rules, ACLs & Segmentation'},
+    {id:'c2-4', name:'Network Lab: Live Attack Capture'},
+   ],
+   labActivities:['Packet flow visualization','Subnetting exercises','VLAN simulation lab','Wireshark packet analysis']},
+
+  {id:3, phase:1, name:'Linux Essentials for Cybersecurity', certs:'CEH · Security+ · Linux+',
+   tools:['Bash/Zsh','netstat/ss','auditd','fail2ban','systemctl'],
+   concepts:['Filesystem & Permissions','Process Management','CLI Triage Tools','SSH Hardening','Log Locations','Host Hardening'],
+   wow:"Every learner hardens a real Linux VM — not a sandboxed simulator — and leaves with a personalised hardening checklist they can walk into any employer's environment on Day 1.",
+   los:["Navigate the Linux filesystem and interpret the full permissions model (owner/group/world, SUID/SGID)","Identify suspicious user accounts, shell access, and sudo escalation paths","Use grep, awk, netstat, and systemctl to investigate live services and running processes","Disable unnecessary services, lock users, and configure SSH with key-based auth only","Locate and configure key log files (auth.log, syslog, audit.log) for monitoring","Produce a personalised host hardening checklist from the live lab"],
+   modules:[
+    {id:'c3-1', name:'Linux Filesystem, Users & Permissions'},
+    {id:'c3-2', name:'CLI Security Tools for Triage'},
+    {id:'c3-3', name:'Host Hardening Lab'},
+    {id:'c3-4', name:'Hardening Checklist & Peer Review'},
+   ],
+   labActivities:['Linux navigation exercises','Permission escalation lab','Service hardening lab','Bash scripting project']},
+
+  {id:4, phase:1, name:'Windows Security & PowerShell Fundamentals', certs:'CEH · Security+',
+   tools:['PowerShell','Event Viewer','Sysmon','BloodHound','AD Explorer'],
+   concepts:['Active Directory','GPOs','Windows Event Logs','PowerShell Scripting','PrivEsc Techniques','Persistence Methods'],
+   wow:"Learners discover a hidden privilege-escalation path in a lab AD using BloodHound — the exact technique used in Colonial Pipeline — and then close it, making defense viscerally real, not theoretical.",
+   los:["Navigate AD structure, OU hierarchies, and GPO enforcement at an analyst working level","Identify GPO misconfigurations that create lateral-movement risks","Locate and interpret key security event IDs (4624, 4648, 4688, 4698) in real log exports","Use Event Viewer and Sysmon to reconstruct a lateral-movement path","Write PowerShell scripts for host enumeration, GPO auditing, and user account analysis","Run BloodHound queries against a lab AD to discover privilege-escalation paths"],
+   modules:[
+    {id:'c4-1', name:'Active Directory & GPO Security'},
+    {id:'c4-2', name:'Windows Event Log Analysis'},
+    {id:'c4-3', name:'PowerShell for Security Automation'},
+    {id:'c4-4', name:'BloodHound Lab: Finding Hidden PrivEsc Paths'},
+   ],
+   labActivities:['Windows process analysis','Registry investigation lab','AD enumeration lab','PowerShell automation lab']},
+
+  {id:5, phase:1, name:'Programming & Automation for Security', certs:'CEH · PCEP/PCAP',
+   tools:['Python 3','requests','regex/re','Shodan API','VirusTotal API'],
+   concepts:['Security Scripting','Log Parsing','Regex for IOCs','API Interaction','Automation Pipelines','Secure Coding'],
+   wow:"The capstone for this module is a working Python security tool on GitHub — by Week 5 every learner has a recruiter-visible portfolio artefact, months before classmates at other institutes write their first script.",
+   los:["Write Python scripts to parse multi-GB log files and extract anomalous events at scale","Apply regex patterns to identify IP addresses, hashes, and domain IOCs in raw text","Query the Shodan and VirusTotal APIs programmatically to enrich recon findings","Build a Python parser that ingests unstructured threat-intel reports and outputs structured IOC lists","Build a complete automation tool end-to-end with secure coding practices","Push the finished tool to GitHub — first recruiter-visible security artefact by Week 5"],
+   modules:[
+    {id:'c5-1', name:'Python for Log Parsing & Triage'},
+    {id:'c5-2', name:'Automating Recon with Python & APIs'},
+    {id:'c5-3', name:'IOC Extraction from Threat Intel Feeds'},
+    {id:'c5-4', name:'Build & Publish Your First Security Tool'},
+   ],
+   labActivities:['Python scripting exercises','Log parsing lab','Port scanner development','Security tool mini-project']},
+
+  {id:6, phase:2, name:'Cyber Threat Landscape & Threat Intelligence', certs:'Security+ · CSA · CEH',
+   tools:['MISP','OpenCTI','ANY.RUN','VirusTotal','ATT&CK Navigator'],
+   concepts:['Threat Intel Frameworks','Diamond Model','Malware Behaviour','IOC Feeds','C2 Patterns','SOC Workflow'],
+   wow:"Learners analyse a live APT campaign and produce the exact threat-profile deliverable a Day-1 SOC analyst submits — not a simulated exercise, a real professional output in Week 6.",
+   los:["Apply MITRE ATT&CK, Cyber Kill Chain, and the Diamond Model to classify adversary campaigns","Map a known APT group's TTPs to ATT&CK Navigator with evidence citations","Recognise persistence, C2, and exfiltration patterns without full reverse-engineering depth","Detonate a malware sample in ANY.RUN sandbox and document its behavioural artefacts","Ingest and triage IOC feeds in a structured SOC triage workflow using MISP","Analyse a real APT campaign report and produce a structured threat profile"],
+   modules:[
+    {id:'c6-1', name:'Threat Intel Frameworks'},
+    {id:'c6-2', name:'Malware Behaviour Patterns'},
+    {id:'c6-3', name:'Consuming IOC Feeds in a SOC Workflow'},
+    {id:'c6-4', name:'APT Campaign Threat Profile Project'},
+   ],
+   labActivities:['Threat profiling exercise','MITRE mapping lab','Malware sandbox analysis','IOC correlation lab']},
+
+  {id:7, phase:2, name:'Footprinting, Reconnaissance & Enumeration', certs:'CEH',
+   tools:['Nmap','Shodan','theHarvester','Maltego CE','Recon-ng','DNSrecon'],
+   concepts:['OSINT','Passive vs Active Recon','Service Enumeration','Shodan/Maltego','DNS Recon','Recon Report'],
+   wow:"Learners map their own digital footprint in the OSINT lab — exposed emails, credentials, and social data — making the threat of reconnaissance personally real before they ever point a tool at a target network.",
+   los:["Use theHarvester, Maltego, and Shodan to map an organisation's external attack surface passively","Discover exposed credentials, email addresses, and ASN data without touching the target","Run targeted Nmap scans to identify open ports, service versions, and OS fingerprints","Enumerate services, users, shares, and directory structures using Recon-ng and DNSrecon","Discover your own digital footprint — making the threat viscerally personal","Produce a structured recon report mapped to Kill Chain reconnaissance phase"],
+   modules:[
+    {id:'c7-1', name:'Passive OSINT Techniques'},
+    {id:'c7-2', name:'Active Scanning with Nmap'},
+    {id:'c7-3', name:'Service & User Enumeration'},
+    {id:'c7-4', name:'Personal Footprint & Recon Report'},
+   ],
+   labActivities:['OSINT lab','Nmap scanning lab','DNS enumeration lab','Nessus / OpenVAS scanning']},
+
+  {id:8, phase:2, name:'Vulnerability Assessment, Exploitation & Privilege Escalation', certs:'CEH · eJPT · PNPT',
+   tools:['Nessus Essentials','OpenVAS','Metasploit','Searchsploit','LinPEAS/WinPEAS'],
+   concepts:['Vulnerability Scanning','CVSS v3.1','Metasploit','Manual Exploitation','Linux PrivEsc','Windows PrivEsc'],
+   wow:"Rare among Indian modules: one skill set mapped to two distinct cert outcomes — eJPT for entry-level proof, PNPT for professional-level credibility — giving learners a built-in career ladder without ever repeating content.",
+   los:["Run Nessus Essentials and OpenVAS against lab targets and interpret raw output","Prioritise findings by CVSS score, exploitability, and business impact","Use Metasploit to exploit common vulnerabilities in controlled lab environments","Escalate privileges on Linux (SUID abuse, sudo misconfig) and Windows (token impersonation, DLL hijacking)","Use LinPEAS / WinPEAS to enumerate escalation vectors systematically","Document a complete attack path (scan → exploit → escalate) in eJPT-style report format"],
+   modules:[
+    {id:'c8-1', name:'Vulnerability Scanning & Prioritisation'},
+    {id:'c8-2', name:'Exploitation with Metasploit'},
+    {id:'c8-3', name:'Privilege Escalation (Linux & Windows)'},
+    {id:'c8-4', name:'Full Attack Path Documentation'},
+   ],
+   labActivities:['Vulnerability assessment lab','Metasploit lab; Post-exploitation walkthrough','Linux / Windows privesc lab','Password auditing; Pivoting simulation']},
+
+  {id:9, phase:2, name:'Web, API & Mobile Application Security', certs:'CEH · eWPT · APIsec CP',
+   tools:['Burp Suite','OWASP ZAP','Postman','MobSF','frida','Apktool'],
+   concepts:['OWASP Web Top 10','OWASP API Top 10','Burp Suite Proxy','BOLA/Auth Flaws','Mobile Static Analysis','Traffic Interception'],
+   wow:"Learners run a bug-bounty-style test on a vulnerable e-commerce API — the closest approximation to a paid engagement available in any Indian classroom, resulting in a tri-layer report portfolio piece.",
+   los:["Test for SQLi, XSS, IDOR, and SSRF using Burp Suite against DVWA / Juice Shop lab targets","Identify and exploit BOLA, broken object-level auth, and mass assignment flaws in a REST API lab","Use Postman to craft malicious API requests and observe server-side impact","Perform static analysis on an APK using MobSF to identify hardcoded secrets and insecure storage","Intercept mobile app traffic with Burp to find cleartext credential transmission","Produce a tri-layer report: executive summary, technical findings, developer remediation guide"],
+   modules:[
+    {id:'c9-1', name:'OWASP Web Top 10 Testing'},
+    {id:'c9-2', name:'OWASP API Top 10 & Auth Flaws'},
+    {id:'c9-3', name:'Mobile App Security Assessment'},
+    {id:'c9-4', name:'Bug Bounty-Style E-Commerce API Test'},
+   ],
+   labActivities:['HTTP packet inspection; OWASP exploitation lab','Session hijacking; Burp Suite testing lab','API testing lab; JWT exploitation lab','Mobile app analysis; APK reverse engineering']},
+
+  {id:10, phase:3, name:'Network Penetration Testing & Wireless Security', certs:'CEH · PenTest+ · PNPT',
+   tools:['BloodHound','Impacket','CrackMapExec','Responder','aircrack-ng'],
+   concepts:['AD Attack Paths','Lateral Movement','Pivoting','WPA2/3 Weaknesses','Rogue AP Detection','Pentest Report'],
+   wow:"Learners produce a pentest report in the exact format used by Big-4 consulting firms — structured, CVSS-scored, evidence-backed — the same day the lab ends. It goes straight into their portfolio.",
+   los:["Execute an internal pentest engagement against a lab AD: initial access → lateral movement → pivoting","Use Responder, CrackMapExec, and Impacket to move across network segments","Assess WPA2/3 weaknesses including handshake capture, PMKID attacks, and rogue AP setup","Detect deauthentication attacks and document wireless attack surface in a lab","Produce a professional pentest report: executive summary, technical findings, CVSS scores, remediation","Run a full timed pentest engagement from recon through report under exam-like conditions"],
+   modules:[
+    {id:'c10-1', name:'Internal Network Pentest Methodology'},
+    {id:'c10-2', name:'Wireless Security Assessment'},
+    {id:'c10-3', name:'Pentest Report Writing'},
+    {id:'c10-4', name:'Full Engagement Simulation & Debrief'},
+   ],
+   labActivities:['Enterprise scanning lab','Pivoting exercise','VPN assessment lab','Wireless attack simulation']},
+
+  {id:11, phase:3, name:'Cloud & AWS Security Fundamentals', certs:'AWS CCP · AWS Security Specialty · Security+',
+   tools:['AWS Console','AWS CLI','Prowler','Scout Suite','CloudMapper'],
+   concepts:['Shared Responsibility','IAM Least Privilege','S3 Misconfiguration','GuardDuty/CloudTrail','CSPM','Multi-cloud Framing'],
+   wow:"Learners intentionally break — then detect, alert on, and fix — a live S3 data-exposure in a real AWS account. Rare among Indian programmes to run this attacker-to-defender loop on real cloud infrastructure.",
+   los:["Apply the shared responsibility model to real breach scenarios across IaaS/PaaS/SaaS layers","Design least-privilege IAM policies in AWS and explain transferability to Azure/GCP","Identify and remediate open S3 buckets, over-permissioned roles, and exposed metadata services","Use Prowler and Scout Suite to scan a live AWS account for critical misconfigurations","Configure GuardDuty, Security Hub, CloudTrail, and AWS Config in a live lab account","Misconfigure an S3 bucket, trigger a GuardDuty alert, detect the exposure, and remediate — the full loop"],
+   modules:[
+    {id:'c11-1', name:'Shared Responsibility & IAM'},
+    {id:'c11-2', name:'Cloud Misconfiguration Classes'},
+    {id:'c11-3', name:'AWS Native Security Services'},
+    {id:'c11-4', name:'Live S3 Exposure: Attack → Detect → Remediate'},
+   ],
+   labActivities:['AWS environment setup','IAM misconfiguration lab','Cloud logging lab','S3 exposure analysis']},
+
+  {id:12, phase:4, name:'Security Operations Center (SOC) Fundamentals', certs:'EC-Council CSA · Security+',
+   tools:['Splunk Free','Elastic SIEM','TheHive','Cortex','ServiceNow (demo)'],
+   concepts:['SOC Tiering L1/L2/L3','Alert Triage','Escalation Criteria','Case Management','Threat Hunting Basics','Shift Handover'],
+   wow:"The SOC simulation puts learners into a live L1 analyst queue — 20 real-world-modelled tickets, 90-minute clock — the closest any classroom gets to the actual Day-1 SOC experience before the offer letter arrives.",
+   los:["Explain L1/L2/L3 SOC roles, escalation criteria, and shift-handover documentation standards","Classify a set of 20 sample alerts by tier and priority using an analyst decision tree","Use TheHive (or ServiceNow demo) to open, escalate, and close an incident end-to-end","Write a structured incident case note that an L3 analyst can hand to a client without revision","Form and test a hypothesis-driven threat hunt against a sample SIEM dataset","Triage, escalate, and close 20 real-world-modelled alerts in 90 minutes — exact Day-1 SOC format"],
+   modules:[
+    {id:'c12-1', name:'SOC Tiering & Triage Workflows'},
+    {id:'c12-2', name:'Incident Case Management'},
+    {id:'c12-3', name:'Introduction to Threat Hunting'},
+    {id:'c12-4', name:'SOC Shift Simulation (20-Ticket Sprint)'},
+   ],
+   labActivities:['SOC workflow simulation','Log source analysis','Alert triage exercise','SOC reporting lab']},
+
+  {id:13, phase:4, name:'SIEM Engineering & Threat Detection', certs:'CSA · Splunk Core · Splunk CDYA',
+   tools:['Splunk Enterprise','Elastic/Kibana','Sigma Rules','ATT&CK Navigator'],
+   concepts:['Log Ingestion','SPL/KQL','ATT&CK Detection Coverage','Sigma Rules','False Positive Tuning','Enrichment'],
+   wow:"Learners publish an original Sigma detection rule to a shared cohort library — a concrete, publicly visible engineering contribution that signals technical depth to recruiters far more powerfully than any cert badge.",
+   los:["Ingest diverse log sources into Splunk and build correlation searches","Map each rule to a specific MITRE ATT&CK technique and document in a detection inventory","Use ATT&CK Navigator to visualise detection coverage and identify technique-level blind spots","Tune SPL/KQL queries with contextual enrichment to reduce alert noise by a measurable percentage","Author an original Sigma detection rule for a real ATT&CK technique and validate it against a log dataset","Publish the rule to the cohort's shared detection library"],
+   modules:[
+    {id:'c13-1', name:'Log Ingestion & Correlation Rule Building'},
+    {id:'c13-2', name:'ATT&CK Coverage Mapping & Gap Analysis'},
+    {id:'c13-3', name:'False-Positive Reduction & Enrichment'},
+    {id:'c13-4', name:'Write & Publish a Sigma Detection Rule'},
+   ],
+   labActivities:['SIEM architecture walkthrough','Correlation rule lab','Detection rule creation','Dashboard development']},
+
+  {id:14, phase:4, name:'Endpoint Security, XDR & Threat Hunting', certs:'CSA · CySA+ · Security+ · SC-200',
+   tools:['MS Defender XDR','Velociraptor','YARA','OSQuery','Sysmon'],
+   concepts:['Endpoint Telemetry','Process Trees','Persistence Artefacts','IOC-Driven Hunting','Behaviour-Based Hunting','AI/SOAR Risks'],
+   wow:"Among the few Indian programmes to treat AI-assisted triage as a formal skill domain — including a live lab demonstrating a prompt-injection attack against a security automation workflow. This is a Class 4 moment no learner forgets.",
+   los:["Investigate process trees, registry persistence artefacts, and Sysmon events to confirm or dismiss alerts","Reconstruct an attacker's post-exploitation sequence from endpoint telemetry alone","Execute an IOC-driven hunt across an XDR platform using known bad hashes, IPs, and domains","Write YARA rules targeting behavioural patterns and deploy them across a simulated fleet","Use OSQuery to hunt for persistence mechanisms that evade signature-based detection","Demonstrate a prompt-injection attack against a security automation workflow"],
+   modules:[
+    {id:'c14-1', name:'Endpoint Telemetry Investigation'},
+    {id:'c14-2', name:'IOC-Driven Threat Hunting'},
+    {id:'c14-3', name:'Behaviour-Driven Hunting with YARA & OSQuery'},
+    {id:'c14-4', name:'AI Triage, SOAR & the Risks of Automation'},
+   ],
+   labActivities:['Endpoint investigation','XDR simulation lab','Threat hunting exercise','ATT&CK mapping lab; AI-assisted alert analysis; Prompt injection testing']},
+
+  {id:15, phase:5, name:'Incident Response & Digital Forensics', certs:'CSA · CHFI · CySA+ · Security+',
+   tools:['Autopsy','Volatility 3','FTK Imager','Redline','Wireshark','ELK Stack'],
+   concepts:['IR Lifecycle','Containment Strategies','Disk Forensics','Memory Forensics','Chain of Custody','IR Report Writing'],
+   wow:"Learners produce a court-admissible-format IR report on a simulated ransomware breach — reviewed against real DFIR firm rubrics. A portfolio piece that opens conversations no exam certificate alone ever will.",
+   los:["Execute the 6-phase IR lifecycle on a simulated breach: preparation → detection → containment → eradication → recovery → lessons learned","Acquire a forensic disk image with FTK Imager and analyse it using Autopsy for file artefacts","Run Volatility 3 against a memory dump to extract running processes, network connections, and injected code","Reconstruct a complete attacker timeline from disk and memory artefacts","Maintain and document chain-of-custody procedures for evidence that may face legal scrutiny","Write a complete incident report in two layers: technical forensic appendix + executive briefing"],
+   modules:[
+    {id:'c15-1', name:'IR Lifecycle & Playbook Execution'},
+    {id:'c15-2', name:'Disk & Memory Forensics'},
+    {id:'c15-3', name:'Timeline Reconstruction & Chain of Custody'},
+    {id:'c15-4', name:'Dual-Audience IR Report'},
+   ],
+   labActivities:['Incident simulation; IR playbook execution','Disk forensics lab; Memory analysis lab','Timeline reconstruction; Chain-of-custody exercise','Dual-audience IR report writing']},
+];
+
+// Capstone — tracked alongside the 15 labs, fed by all of them, not counted in the 60-class total
+const CAPSTONE = {
+  id:'CAP', name:'★ Capstone: Red-vs-Blue Simulation + GRC + Portfolio', certs:'CEH · eJPT · PNPT · CSA',
+  tools:['Full L01–L15 toolchain','ISO 27001 Matrix','NIST CSF','GitHub Pages'],
+  concepts:['Full Kill Chain (Red)','Detect & Contain (Blue)','ISO 27001/NIST CSF','GRC Gap Summary','Portfolio Writing','Industry Panel Review'],
+  wow:"The final assessment is not an exam — it is a live Red-vs-Blue engagement witnessed by industry panellists. Learners produce a portfolio artefact and a compliance gap report the same day. Few Indian programmes end like this.",
+  los:["Execute a full offensive engagement: recon → initial access → exploitation → privilege escalation → exfiltration","Monitor SIEM and XDR telemetry live as the Red team executes — detect, contain, and document in real time","Map the engagement's findings to ISO 27001:2022 or NIST CSF controls and identify compliance gaps","Package the capstone output as a resume-ready portfolio: executive writeup + technical appendix + GitHub evidence","Present findings to an industry panel — witnessed by external reviewers, not just instructors"],
+  modules:[
+    {id:'cap-1', name:'Red Team: Full Kill Chain Engagement'},
+    {id:'cap-2', name:'Blue Team: Detect, Contain & Respond'},
+    {id:'cap-3', name:'GRC Mapping & Compliance Gap Summary'},
+    {id:'cap-4', name:'Portfolio Assembly & Industry Panel Debrief'},
+  ],
+};
+
+// ── 15 LABS, each chained, each with 4 nested activities straight from brochure's Lab Activity Directory ──
+const LABS = COMPETENCIES.map((c,i)=>({
+  id:`L${String(c.id).padStart(2,'0')}`,
+  compId:c.id,
+  phase:c.phase,
+  title:c.name,
+  activities: c.labActivities.map((desc,j)=>({
+    id:`l${c.id}-a${j+1}`,
+    name:desc,
+  })),
+}));
+
+const PROGRAMME_DEADLINE = new Date('2026-07-10T23:59:59');
+
+// ═══════════════════════════════════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════════════════════════════════
+const SB_URL  = 'https://alxtlzxbjpxxdrpohnvb.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFseHRsenhianB4eGRycG9obnZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTM3NTUsImV4cCI6MjA5MDAyOTc1NX0.7B41JEAgwt0LmubRQoq4csfTdH4J_I2DXUzHe7iGZkw';
+const TABLE   = 'tracker_state';
+const ROW_ID  = 'cybered_singleton_v4';
+const SK      = 'cybered_v4_brochure'; // localStorage fallback key
+
+let sb = null;
+let SUPABASE_AVAILABLE = false;
+try {
+  if (typeof supabase !== 'undefined' && supabase.createClient) {
+    sb = supabase.createClient(SB_URL, SB_KEY);
+    SUPABASE_AVAILABLE = true;
+  } else {
+    console.warn('Supabase SDK not loaded — running in localStorage-only mode.');
+  }
+} catch(e) {
+  console.warn('Supabase init failed — running in localStorage-only mode.', e);
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let S = { checks:{}, labTaskChecks:{}, pptChecks:{}, capChecks:{} };
+let _saveTimer   = null;
+let _ignoreNext  = false;
+
+function setSyncUI(state, label, time=''){
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  const tim = document.getElementById('sync-time');
+  if(!dot) return;
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = label;
+  tim.textContent = time;
+}
+function nowStr(){
+  return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+function saveLocal(){
+  try{ localStorage.setItem(SK, JSON.stringify(S)); } catch(e){}
+}
+function loadLocal(){
+  try{
+    const s = localStorage.getItem(SK);
+    if(s){ S = {...S, ...JSON.parse(s)}; }
+  } catch(e){}
+}
+function applyRemote(row){
+  if(!row) return;
+  S.checks        = row.checks       || {};
+  S.labTaskChecks = row.lab_tasks    || {};
+  S.pptChecks     = row.ppt_checks   || {};
+  S.capChecks     = row.cap_checks   || {};
+  saveLocal();
+  renderCompetencies();
+  renderPPT();
+  renderLabs();
+  updateStats();
+}
+function saveS(){
+  saveLocal();
+  if(!SUPABASE_AVAILABLE){
+    setSyncUI('live','Saved locally (offline mode)', nowStr());
+    return;
+  }
+  clearTimeout(_saveTimer);
+  setSyncUI('saving','Saving…', nowStr());
+  _saveTimer = setTimeout(async ()=>{
+    _ignoreNext = true;
+    const payload = {
+      id:          ROW_ID,
+      checks:      S.checks,
+      lab_tasks:   S.labTaskChecks,
+      ppt_checks:  S.pptChecks,
+      cap_checks:  S.capChecks,
+      updated_at:  new Date().toISOString(),
+    };
+    try{
+      const { error } = await sb.from(TABLE).upsert(payload, { onConflict: 'id' });
+      if(error) throw error;
+      setSyncUI('live', 'Saved & synced ✓', nowStr());
+    } catch(error) {
+      console.error('Supabase save error:', error);
+      setSyncUI('error', 'Save failed — working offline', nowStr());
+      setTimeout(()=> setSyncUI('live','Synced (offline mode)', nowStr()), 3000);
+      _ignoreNext = false;
+    }
+  }, 800);
+}
+async function loadFromSupabase(){
+  if(!SUPABASE_AVAILABLE){
+    loadLocal();
+    setSyncUI('error','Supabase SDK unavailable — localStorage mode', nowStr());
+    return;
+  }
+  setSyncUI('connecting','Connecting to Supabase…');
+  try{
+    const { data, error } = await sb.from(TABLE).select('*').eq('id', ROW_ID).single();
+    if(error && error.code !== 'PGRST116'){ throw error; }
+    if(data){
+      applyRemote(data);
+      setSyncUI('live','Live sync active ✓', nowStr());
+    } else {
+      loadLocal();
+      const { error: upsertErr } = await sb.from(TABLE).upsert({
+        id: ROW_ID, checks: S.checks, lab_tasks: S.labTaskChecks,
+        ppt_checks: S.pptChecks, cap_checks: S.capChecks,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+      if(upsertErr) throw upsertErr;
+      setSyncUI('live','Initialised & synced ✓', nowStr());
+    }
+  } catch(err){
+    console.error('Supabase load error:', err);
+    loadLocal();
+    setSyncUI('error','Supabase unreachable — localStorage mode', nowStr());
+  }
+}
+function subscribeRealtime(){
+  if(!SUPABASE_AVAILABLE) return;
+  sb.channel('tracker-state-changes-v4')
+    .on('postgres_changes',
+      { event:'UPDATE', schema:'public', table:TABLE, filter:`id=eq.${ROW_ID}` },
+      (payload) => {
+        if(_ignoreNext){ _ignoreNext = false; return; }
+        applyRemote(payload.new);
+        setSyncUI('live','Remote update received ↻', nowStr());
+        setTimeout(()=> setSyncUI('live','Live sync active ✓', nowStr()), 2000);
+      }
+    )
+    .subscribe((status)=>{
+      if(status === 'SUBSCRIBED'){
+        setSyncUI('live','Live sync active ✓', nowStr());
+      } else if(status === 'CHANNEL_ERROR' || status === 'TIMED_OUT'){
+        setSyncUI('error','Realtime disconnected — saves still work', nowStr());
+      }
+    });
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function countDoneComp(comp){
+  let d=0;
+  comp.modules.forEach(m=>ARCHETYPES.forEach(a=>{if(S.checks[`${m.id}-${a.key}`])d++}));
+  return d;
+}
+function updateDaysRemaining(){
+  const now = new Date();
+  const diffMs = PROGRAMME_DEADLINE - now;
+  const days = Math.ceil(diffMs / 86400000);
+  const el = document.getElementById('days-remaining');
+  if(!el) return;
+  if(days > 0){ el.textContent = `${days} day${days===1?'':'s'} left`; }
+  else if(days === 0){ el.textContent = 'Due today'; }
+  else { el.textContent = `${Math.abs(days)} day${Math.abs(days)===1?'':'s'} overdue`; el.style.color='var(--red)'; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER: COMPETENCIES (grouped by phase)
+// ═══════════════════════════════════════════════════════════
+function renderCompetencies(){
+  document.getElementById('phase-sections').innerHTML = PHASES_META.map(ph=>{
+    const comps = COMPETENCIES.filter(c=>c.phase===ph.num);
+    const compsHtml = comps.map(comp=>renderCompCard(comp)).join('');
+    return `<div class="phase-section">
+      <div class="phase-hdr">
+        <div class="phase-hdr-left">
+          <span class="phase-badge pb${ph.num}">${ph.label}</span>
+          <span class="phase-title-txt">${ph.title}</span>
+        </div>
+        <div class="phase-meta">${ph.months} · ${comps.length} ${comps.length===1?'Competency':'Competencies'} · ${comps.length*4} Classes</div>
+      </div>
+      <div class="phase-pb"><div class="phase-pb-fill" id="ph${ph.num}-bar" style="width:0%;background:${ph.col}"></div></div>
+      <div class="comp-grid">${compsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCompCard(comp){
+  const total = comp.modules.length*4;
+  const done  = countDoneComp(comp);
+  const pct   = Math.round(done/total*100);
+
+  const mods = comp.modules.map(m=>{
+    const archs = ARCHETYPES.map(a=>{
+      const key=`${m.id}-${a.key}`;
+      return `<div class="ach${S.checks[key]?' checked':''}" data-type="${a.key}" data-key="${key}"><span class="ach-tip">${a.tip}</span>${a.label}</div>`;
+    }).join('');
+    return `<div class="module-row">
+      <div class="mod-name-wrap">
+        <span class="mod-name" title="${m.name}">${m.name}</span>
+      </div>
+      <div class="arch-checks">${archs}</div>
+    </div>`;
+  }).join('');
+
+  const barSegs = [];
+  ARCHETYPES.forEach(a=>comp.modules.forEach(m=>{
+    barSegs.push(`<div class="comp-bar-seg${S.checks[`${m.id}-${a.key}`]?' fill-'+a.key:''}"></div>`);
+  }));
+
+  return `<div class="comp-card${pct===100?' done':''}" id="cc-${comp.id}">
+    <div class="comp-head">
+      <span class="comp-num">${String(comp.id).padStart(2,'0')}</span>
+      <span class="comp-name-txt">${comp.name}</span>
+      <span class="comp-pct-badge" id="cpct-${comp.id}">${pct}%</span>
+      <span class="comp-certs">${comp.certs}</span>
+    </div>
+    <div class="comp-body">
+      <div class="mod-label"><span>4 Classes</span></div>
+      ${mods}
+      <div class="comp-bar-row" id="cbar-${comp.id}">${barSegs.join('')}</div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER: CURRICULUM DETAIL (concepts/tools/LOs/wow factor)
+// ═══════════════════════════════════════════════════════════
+function renderConcepts(){
+  const all = [...COMPETENCIES, CAPSTONE];
+  document.getElementById('concepts-list').innerHTML = all.map(comp=>{
+    const idLabel = comp.id==='CAP' ? '★' : String(comp.id).padStart(2,'0');
+    return `<div class="concept-card" id="concept-${comp.id}">
+      <div class="concept-head" data-concept="${comp.id}">
+        <span class="concept-num">${idLabel}</span>
+        <span class="concept-title">${comp.name}</span>
+        <span class="concept-certs">${comp.certs}</span>
+        <span class="concept-arrow">▾</span>
+      </div>
+      <div class="concept-body">
+        <div class="concept-section-label">Key Concepts</div>
+        <div class="kc-pills">${comp.concepts.map(k=>`<span class="kc-pill">${k}</span>`).join('')}</div>
+        <div class="concept-section-label">Tools You Will Master</div>
+        <div class="tool-pills">${comp.tools.map(t=>`<span class="tool-pill">${t}</span>`).join('')}</div>
+        <div class="concept-section-label">Learning Outcomes</div>
+        <ul class="lo-list">${comp.los.map(l=>`<li>${l}</li>`).join('')}</ul>
+        <div class="concept-section-label">Wow Factor</div>
+        <div class="wow-box"><strong>Why it lands</strong>${comp.wow}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER: PPT
+// ═══════════════════════════════════════════════════════════
+function renderPPT(){
+  document.getElementById('ppt-grid').innerHTML = COMPETENCIES.map(comp=>{
+    const rows = comp.modules.map(m=>{
+      const key=`ppt-${m.id}`;
+      return `<div class="ppt-mod-row">
+        <span class="ppt-mod-name">${m.name}</span>
+        <div class="ppt-check-box${S.pptChecks[key]?' done':''}" data-ppt="${key}">✓</div>
+      </div>`;
+    }).join('');
+    return `<div class="ppt-comp-card">
+      <div class="ppt-comp-head">
+        <span class="ppt-comp-name">${comp.name}</span>
+        <span class="ppt-total-badge">4 classes</span>
+      </div>
+      <div class="ppt-module-list">${rows}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER: LABS
+// ═══════════════════════════════════════════════════════════
+function renderLabs(){
+  const introData = [
+    {range:'L01–L05', col:'var(--p1)', title:'Foundations Labs',
+     desc:'Individual skill-building labs aligned to Phase 1 — Linux, Windows, networking, and scripting fundamentals.'},
+    {range:'L06–L09', col:'var(--p2)', title:'Offensive Core Labs',
+     desc:'Threat intel, recon, exploitation, and appsec labs — the offensive skill chain feeding later phases.'},
+    {range:'L10–L11', col:'var(--p3)', title:'Network & Cloud Labs',
+     desc:'Pentest engagement simulation, wireless attacks, and live AWS misconfiguration → detection → remediation.'},
+    {range:'L12–L14', col:'var(--p4)', title:'Defensive Operations Labs',
+     desc:'SOC triage, SIEM detection engineering, and endpoint/XDR threat hunting — the blue-team skill chain.'},
+    {range:'L15 + Capstone', col:'var(--p5)', title:'Forensics & Capstone',
+     desc:'Digital forensics close out the 15 labs; the Red-vs-Blue capstone activates every skill simultaneously.'},
+  ];
+  document.getElementById('lab-intro-cards').innerHTML = introData.map(d=>`
+    <div class="lab-chain-card" style="border-top:3px solid ${d.col}">
+      <div class="lcc-range" style="color:${d.col}">${d.range}</div>
+      <div class="lcc-title" style="color:${d.col}">${d.title}</div>
+      <div class="lcc-desc">${d.desc}</div>
+    </div>`).join('');
+
+  const phaseColOf = (phase)=> PHASES_META.find(p=>p.num===phase)?.col || 'var(--p1)';
+
+  let labsHtml = LABS.map(lab=>{
+    const col = phaseColOf(lab.phase);
+    const acts = lab.activities.map(act=>`
+      <div class="lab-task">
+        <div class="lab-task-check${S.labTaskChecks[act.id]?' done':''}" data-task="${act.id}">✓</div>
+        <div class="lab-task-body"><div class="lab-task-name">${act.name}</div></div>
+      </div>`).join('');
+    const tasksDone = lab.activities.filter(a=>S.labTaskChecks[a.id]).length;
+
+    return `<div class="lab-entry" id="le-${lab.id}">
+      <div class="lab-header" data-labid="${lab.id}">
+        <span class="lab-num-pill" style="background:${col}20;color:${col};border:1px solid ${col}40">${lab.id}</span>
+        <span class="lab-title">${lab.title}</span>
+        <span class="lab-comp-tag">C${String(lab.compId).padStart(2,'0')}</span>
+        <span class="lab-task-counter" id="ltc-${lab.id}">${tasksDone}/${lab.activities.length} activities</span>
+        <span class="lab-expand-btn" data-labid="${lab.id}">▾</span>
+      </div>
+      <div class="lab-body">
+        <div class="lab-tasks-label">Nested Lab Activities</div>
+        ${acts}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Capstone block appended after L15
+  const capDone = CAPSTONE.modules.filter(m=>S.capChecks[m.id]).length;
+  const capActs = CAPSTONE.modules.map(m=>`
+    <div class="lab-task">
+      <div class="lab-task-check${S.capChecks[m.id]?' done':''}" data-cap="${m.id}">✓</div>
+      <div class="lab-task-body"><div class="lab-task-name">${m.name}</div></div>
+    </div>`).join('');
+
+  labsHtml += `<div class="lab-entry capstone" id="le-CAP">
+    <div class="lab-header" data-labid="CAP">
+      <span class="lab-num-pill" style="background:var(--green)20;color:var(--green);border:1px solid var(--green)40">★</span>
+      <span class="lab-title">${CAPSTONE.name}</span>
+      <span class="lab-comp-tag">All C01–C15</span>
+      <span class="lab-task-counter" id="ltc-CAP">${capDone}/${CAPSTONE.modules.length} classes</span>
+      <span class="lab-expand-btn" data-labid="CAP">▾</span>
+    </div>
+    <div class="lab-body">
+      <div class="lab-tasks-label">Capstone Classes</div>
+      ${capActs}
+    </div>
+  </div>`;
+
+  document.getElementById('lab-list').innerHTML = labsHtml;
+}
+
+// ═══════════════════════════════════════════════════════════
+// UPDATE STATS
+// ═══════════════════════════════════════════════════════════
+function updateStats(){
+  const TOTAL_UNITS = 60*4; // 240
+  let done=0,pptD=0,glossD=0,preD=0,quizD=0;
+  COMPETENCIES.forEach(c=>c.modules.forEach(m=>{
+    ARCHETYPES.forEach(a=>{
+      if(S.checks[`${m.id}-${a.key}`]){
+        done++;
+        if(a.key==='ppt')  pptD++;
+        if(a.key==='gloss')glossD++;
+        if(a.key==='pre')  preD++;
+        if(a.key==='quiz') quizD++;
+      }
+    });
+  }));
+
+  const totalLabActivities = LABS.reduce((s,l)=>s+l.activities.length,0); // 60
+  let labD = 0;
+  LABS.forEach(l=>l.activities.forEach(a=>{ if(S.labTaskChecks[a.id]) labD++; }));
+  const labsFullyDone = LABS.filter(l=>l.activities.every(a=>S.labTaskChecks[a.id])).length;
+
+  document.getElementById('stat-units').textContent = done;
+  document.getElementById('stat-pct').textContent   = Math.round(done/TOTAL_UNITS*100)+'%';
+  document.getElementById('stat-labs').textContent  = labsFullyDone+'/15';
+  document.getElementById('stat-ppts').textContent  = pptD;
+
+  [['bar-overall','pct-overall',done,TOTAL_UNITS],
+   ['bar-ppt','pct-ppt',pptD,60],['bar-gloss','pct-gloss',glossD,60],
+   ['bar-pre','pct-pre',preD,60],['bar-quiz','pct-quiz',quizD,60],
+   ['bar-lab','pct-lab',labD,totalLabActivities]
+  ].forEach(([bid,pid,d,t])=>{
+    const pct=Math.round(d/t*100);
+    const b=document.getElementById(bid);if(b)b.style.width=pct+'%';
+    const p=document.getElementById(pid);if(p)p.textContent=pct+'%';
+  });
+
+  // Phase bars
+  PHASES_META.forEach(ph=>{
+    const comps=COMPETENCIES.filter(c=>c.phase===ph.num);
+    const t=comps.reduce((s,c)=>s+c.modules.length*4,0);
+    let d=0;
+    comps.forEach(c=>c.modules.forEach(m=>ARCHETYPES.forEach(a=>{if(S.checks[`${m.id}-${a.key}`])d++})));
+    const bar=document.getElementById(`ph${ph.num}-bar`);
+    if(bar)bar.style.width=(t?Math.round(d/t*100):0)+'%';
+  });
+
+  // Comp cards
+  COMPETENCIES.forEach(c=>{
+    const t=c.modules.length*4;
+    const d=countDoneComp(c);
+    const pct=Math.round(d/t*100);
+    const badge=document.getElementById(`cpct-${c.id}`);
+    if(badge){badge.textContent=pct+'%';badge.className='comp-pct-badge'+(pct===100?' full':'');}
+    const card=document.getElementById(`cc-${c.id}`);
+    if(card)card.className='comp-card'+(pct===100?' done':'');
+    const barRow=document.getElementById(`cbar-${c.id}`);
+    if(barRow){
+      const segs=barRow.querySelectorAll('.comp-bar-seg');let idx=0;
+      ARCHETYPES.forEach(a=>c.modules.forEach(m=>{
+        if(segs[idx])segs[idx].className='comp-bar-seg'+(S.checks[`${m.id}-${a.key}`]?' fill-'+a.key:'');
+        idx++;
+      }));
+    }
+  });
+
+  // Summary
+  document.getElementById('su-total').textContent=done;
+  document.getElementById('su-ppt').textContent=pptD;
+  document.getElementById('su-gloss').textContent=glossD;
+  document.getElementById('su-quiz').textContent=quizD;
+  [['as-ppt','asc-ppt',pptD,60],['as-gloss','asc-gloss',glossD,60],
+   ['as-pre','asc-pre',preD,60],['as-quiz','asc-quiz',quizD,60],['as-lab','asc-lab',labD,totalLabActivities]
+  ].forEach(([bid,cid,d,t])=>{
+    const el=document.getElementById(bid);if(el)el.style.width=Math.round(d/t*100)+'%';
+    const cel=document.getElementById(cid);if(cel)cel.textContent=`${d} / ${t}`;
+  });
+
+  // Phase summary cards
+  const sg=document.getElementById('phase-summary-grid');
+  if(sg) sg.innerHTML=PHASES_META.map(ph=>{
+    const comps=COMPETENCIES.filter(c=>c.phase===ph.num);
+    const t=comps.reduce((s,c)=>s+c.modules.length*4,0);
+    let d=0;
+    comps.forEach(c=>c.modules.forEach(m=>ARCHETYPES.forEach(a=>{if(S.checks[`${m.id}-${a.key}`])d++})));
+    const pct=t?Math.round(d/t*100):0;
+    return `<div class="sc-card">
+      <div class="sc-sprint-name">${ph.label}</div>
+      <div class="sc-pct" style="color:${ph.col}">${pct}%</div>
+      <div class="sc-bar"><div class="sc-bar-fill" style="width:${pct}%;background:${ph.col}"></div></div>
+      <div class="sc-comps">${ph.title}</div>
+    </div>`;
+  }).join('');
+
+  // Update lab counters in-place (cheap, avoids full re-render on every click)
+  LABS.forEach(lab=>{
+    const span=document.getElementById(`ltc-${lab.id}`);
+    if(!span) return;
+    const td=lab.activities.filter(a=>S.labTaskChecks[a.id]).length;
+    span.textContent=`${td}/${lab.activities.length} activities`;
+  });
+  const capSpan=document.getElementById('ltc-CAP');
+  if(capSpan){
+    const td=CAPSTONE.modules.filter(m=>S.capChecks[m.id]).length;
+    capSpan.textContent=`${td}/${CAPSTONE.modules.length} classes`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('click', e=>{
+  const ach = e.target.closest('.ach');
+  if(ach?.dataset.key){
+    S.checks[ach.dataset.key]=!S.checks[ach.dataset.key];
+    ach.classList.toggle('checked',S.checks[ach.dataset.key]);
+    saveS();updateStats();return;
+  }
+  const ppt = e.target.closest('.ppt-check-box');
+  if(ppt?.dataset.ppt){
+    S.pptChecks[ppt.dataset.ppt]=!S.pptChecks[ppt.dataset.ppt];
+    ppt.classList.toggle('done',S.pptChecks[ppt.dataset.ppt]);
+    saveS();updateStats();return;
+  }
+  const concHead = e.target.closest('.concept-head');
+  if(concHead?.dataset.concept){
+    document.getElementById(`concept-${concHead.dataset.concept}`)?.classList.toggle('open');
+    return;
+  }
+  const lhdr = e.target.closest('.lab-header');
+  const larr  = e.target.closest('.lab-expand-btn');
+  if(lhdr || larr){
+    const labid=(lhdr||larr).dataset.labid;
+    if(labid){
+      const entry=document.getElementById(`le-${labid}`);
+      if(entry)entry.classList.toggle('open');
+      return;
+    }
+  }
+  const ltc = e.target.closest('.lab-task-check');
+  if(ltc){
+    if(ltc.dataset.cap){
+      S.capChecks[ltc.dataset.cap]=!S.capChecks[ltc.dataset.cap];
+      ltc.classList.toggle('done',S.capChecks[ltc.dataset.cap]);
+      saveS();updateStats();return;
+    }
+    if(ltc.dataset.task){
+      S.labTaskChecks[ltc.dataset.task]=!S.labTaskChecks[ltc.dataset.task];
+      ltc.classList.toggle('done',S.labTaskChecks[ltc.dataset.task]);
+      saveS();updateStats();return;
+    }
+  }
+});
+
+document.querySelectorAll('.nav-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-'+tab.dataset.view).classList.add('active');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+(async () => {
+  try {
+    updateDaysRemaining();
+    await loadFromSupabase();
+    renderCompetencies();
+    renderConcepts();
+    renderPPT();
+    renderLabs();
+    updateStats();
+    subscribeRealtime();
+    setInterval(updateDaysRemaining, 60*60*1000); // refresh hourly
+  } catch(err) {
+    console.error('Tracker init failed:', err);
+    setSyncUI('error', 'Init error — check console', nowStr());
+  }
+})();
+</script>
+</body>
+</html>
